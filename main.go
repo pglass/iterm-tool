@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"itt/config"
-	"itt/iterm2"
+	"github.com/pglass/iterm-tool/config"
+	"github.com/pglass/iterm-tool/iterm2"
 )
 
 var (
@@ -209,7 +209,7 @@ func feedScriptAndWaitForDone(session iterm2.Session, scfg *config.Session) erro
 
 		// Check if the session has closed.
 		if _, err := session.GetVariable("jobName"); err != nil {
-			return fmt.Errorf("session is closed (unable to get variable jobName from session, which is the hack I'm using to check if closed)")
+			return fmt.Errorf("session closed while waiting for script (unable to get variable jobName from session, which is the hack I'm using to check if closed: %w)", err)
 		}
 	}
 	return nil

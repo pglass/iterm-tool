@@ -1,4 +1,4 @@
-module itt
+module github.com/pglass/iterm-tool
 
 go 1.22.3
 
