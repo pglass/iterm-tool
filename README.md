@@ -93,7 +93,8 @@ echo 'This is where the worker 1 would start'
 depends_on = ["sessions.setup"]
 inject = '''
 echo 'This is where the worker 2 would start'
-'''```
+'''
+```
 
 Run the tool. It will exit when all sessions have completed running their `script` and `inject`
 scripts.
