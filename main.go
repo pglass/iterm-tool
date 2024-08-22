@@ -6,6 +6,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -90,29 +91,59 @@ func main() {
 		log.Fatalf("no sessions in tab")
 	}
 
-	// Create enough splits for each configured session.
-	for i := len(sessions); i < len(cfg.Sessions); i++ {
-		slog.Info("creating session", "num", i+1)
-		last := sessions[len(sessions)-1]
-		sess, err := last.SplitPane(iterm2.SplitPaneOptions{
-			Vertical:                true,
+	assignment := map[string]iterm2.Session{}
+	lastInGroup := map[string]iterm2.Session{}
+
+	addSplit := func(sessCfg *config.Session, splitFrom iterm2.Session, vertical bool) {
+		group := sessCfg.Group()
+		if len(assignment) == 0 {
+			// Tabs are created with a split. Assign it on the first call.
+			assignment[sessCfg.Name] = sessions[0]
+			lastInGroup[group] = sessions[0]
+			slog.Info("assigned initial session", "name", sessCfg.Name, "group", group)
+			return
+		}
+
+		sess, err := splitFrom.SplitPane(iterm2.SplitPaneOptions{
+			Vertical:                vertical,
 			CustomProfileProperties: sessionProps,
 		})
 		die("split pane", err)
+
+		assignment[sessCfg.Name] = sess
+		lastInGroup[group] = sess
 		sessions = append(sessions, sess)
+		slog.Info("assigned new session", "name", sessCfg.Name, "group", group)
+	}
+
+	// Use a simple rule for splits:
+	// - Do all vertical splits before horizontal splits.
+	// - Do one vsplit per group (so, one column per group)
+	// - Do one hsplit for additional group members.
+	sessionConfigsByGroup := cfg.SessionsByGroup()
+	for _, group := range SortedKeys(sessionConfigsByGroup) {
+		// Create one vertical split per group
+		// We'll assign the first session in each group to a vpslit.
+		sessCfg := sessionConfigsByGroup[group][0]
+		splitFrom := sessions[len(sessions)-1]
+		addSplit(sessCfg, splitFrom, true /* vertical */)
+	}
+	for group, cfgs := range cfg.SessionsByGroup() {
+		// We already assigned the first cfg in each group.
+		for _, sessCfg := range cfgs[1:] {
+			splitFrom := lastInGroup[group]
+			addSplit(sessCfg, splitFrom, false /* not vertical */)
+		}
 	}
 
 	// Prep sessions.
-	// - Map session names to indexes.
 	// - Navigate to a specified directory.
-	assignment := map[string]iterm2.Session{}
-	index := 0
 	for name := range cfg.Sessions {
-		sess := sessions[index]
-		assignment[name] = sess
+		sess, ok := assignment[name]
+		if !ok {
+			log.Fatalf("[bug] no assigned session: name=%s", name)
+		}
 		die("set session name", sess.SetName(name))
-		index++
-
 		if cfg.Directory != "" {
 			die("send text", sess.SendText(fmt.Sprintf("cd %s\n", cfg.Directory)))
 		}
@@ -260,4 +291,13 @@ func die(msg string, err error) {
 	if err != nil {
 		log.Fatalf("%s error: %s", msg, err)
 	}
+}
+
+func SortedKeys[V any](m map[string]V) []string {
+	result := []string{}
+	for k := range m {
+		result = append(result, k)
+	}
+	sort.Strings(result)
+	return result
 }

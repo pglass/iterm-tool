@@ -15,8 +15,8 @@ import (
 
 	"github.com/andybrewer/mack"
 	"github.com/gorilla/websocket"
-	"google.golang.org/protobuf/proto"
 	"github.com/pglass/iterm-tool/iterm2/api"
+	"google.golang.org/protobuf/proto"
 )
 
 // New returns a new websocket connection that talks to the iTerm2
