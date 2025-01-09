@@ -54,6 +54,15 @@ func (c *Cache) Put(key string, entry CacheEntry) error {
 	return c.write(data)
 }
 
+func (c *Cache) Delete(key string) error {
+	data, err := c.read()
+	if err != nil {
+		return err
+	}
+	delete(data, key)
+	return c.write(data)
+}
+
 func (c *Cache) read() (cacheData, error) {
 	// read the file - see if it's valid.
 	var data cacheData

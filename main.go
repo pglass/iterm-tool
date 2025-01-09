@@ -17,6 +17,7 @@ import (
 
 var (
 	flagConfigFile string
+	flagStop       bool
 
 	sessionProps = iterm2.CustomProfileProperties{
 		TitleComponents: iterm2.TitleComponentSessionName,
@@ -25,6 +26,7 @@ var (
 
 func init() {
 	flag.StringVar(&flagConfigFile, "c", "", "config file")
+	flag.BoolVar(&flagStop, "stop", false, "stop and teardown a window")
 }
 
 func main() {
@@ -43,7 +45,9 @@ func main() {
 	cache, err := NewCache()
 	die("init cache", err)
 
-	slog.Info("creating stack", "id", cfg.ID)
+	if !flagStop {
+		slog.Info("creating stack", "id", cfg.ID)
+	}
 	app, err := iterm2.NewApp(cfg.ID)
 	if err != nil {
 		log.Fatal(err)
@@ -61,8 +65,13 @@ func main() {
 		if w.ID() == cached.WindowID {
 			slog.Info("closing existing window", "id", w.ID())
 			die("closing existing window", w.Close(true))
+			die("delete from cache", cache.Delete(cfg.ID))
 			break
 		}
+	}
+	if flagStop {
+		// we closed the existing window, if any, so we're done if --stop is used.
+		return
 	}
 
 	window, err := app.CreateWindow(&iterm2.CreateWindowOpts{
