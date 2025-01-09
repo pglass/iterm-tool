@@ -103,8 +103,10 @@ scripts.
 go run . -c example.toml
 ```
 
-If you run the tool again, it will close the existing window, and create a new one and run all
-scripts from the beginning. It matches windows based on the `id` in the config file.
+If you run the tool again with the same config file, it will close the existing window and create a
+new one. It matches windows based on the `id` in the config file. 
+
+Use the `--stop` flag to easily teardown a window: `go run . -c example.toml --stop`
 
 
 Implementation
