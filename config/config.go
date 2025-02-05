@@ -27,6 +27,22 @@ func (c Config) Validate() error {
 			errs = multierror.Append(errs, err)
 		}
 	}
+
+	// Validate DependsOn are valid session names.
+	for _, s := range c.Sessions {
+		for _, d := range s.DependsOn {
+			if !strings.HasPrefix(d, "sessions.") {
+				errs = multierror.Append(errs, fmt.Errorf("invalid name %q in [%s]:depends_on (should be 'sessions.<name>'", d, s.Name))
+				continue
+			}
+			name := strings.SplitN(d, ".", 2)[1]
+			if _, ok := c.Sessions[name]; !ok {
+				errs = multierror.Append(errs, fmt.Errorf("invalid session name %q in [%s]:depends_on (cannot find '[%s])", d, s.Name, d))
+				continue
+			}
+		}
+	}
+
 	return errs
 }
 
@@ -49,6 +65,7 @@ func (c Config) SessionsByGroup() map[string][]*Session {
 
 type Session struct {
 	Name      string
+	Directory string
 	DependsOn []string `mapstructure:"depends_on"`
 	Script    string
 	Inject    string

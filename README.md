@@ -27,10 +27,12 @@ Create a config file.
 #
 id = "my-project-local-dev"
 
-# `directory` is the working directory for all sessions in this file.
+# `directory` is the default working directory for all sessions in this file.
 #
-#   If unset, assumes the current working directory.
-#   (This example uses '.' - the current directory - so that the example
+#   If unset, the current working directory is used.
+#   Sessions can override this directory.
+#
+#   (This example uses '.' - the current directory - so that this example
 #   is runnable on any machine.)
 directory = "."
 
@@ -52,6 +54,10 @@ echo 'Setup is done'
 '''
 
 [sessions.server]
+# `directory` - (optional) the working directory for this session
+# 
+#    If unset, the top-level `directory` field is used.
+directory = "."
 # `depends_on` - a list of dependent sessions that must start/complete first.
 #
 #    This session will not start until these other sessions have completed.

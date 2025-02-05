@@ -147,14 +147,18 @@ func main() {
 
 	// Prep sessions.
 	// - Navigate to a specified directory.
-	for name := range cfg.Sessions {
+	for name, sessCfg := range cfg.Sessions {
 		sess, ok := assignment[name]
 		if !ok {
 			log.Fatalf("[bug] no assigned session: name=%s", name)
 		}
 		die("set session name", sess.SetName(name))
-		if cfg.Directory != "" {
-			die("send text", sess.SendText(fmt.Sprintf("cd %s\n", cfg.Directory)))
+		var dir = cfg.Directory
+		if sessCfg.Directory != "" {
+			dir = sessCfg.Directory
+		}
+		if dir != "" {
+			die("send text", sess.SendText(fmt.Sprintf("cd %s\n", dir)))
 		}
 	}
 
@@ -197,6 +201,7 @@ func main() {
 					}
 				}
 				doneSessions[scfg.Name] = struct{}{}
+				slog.Info("done", "session", scfg.Name)
 			}()
 		}
 
